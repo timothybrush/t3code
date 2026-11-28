@@ -7,6 +7,7 @@ import {
   EnvironmentId,
   MessageId,
   NodeId,
+  ProjectId,
   ProviderDriverKind,
   ProviderInstanceId,
   RunAttemptId,
@@ -16,6 +17,7 @@ import {
   ScheduledTaskId,
   ThreadId,
   type OrchestrationV2Subagent,
+  type ServerProvider,
 } from "@t3tools/contracts";
 import { type LegendListRef } from "@legendapp/list/react";
 import {
@@ -33,9 +35,12 @@ import { DEFAULT_CLIENT_SETTINGS } from "@t3tools/contracts/settings";
 
 import "~/index.css";
 
-import { environmentThreadDetails } from "../../state/threads";
+import { environmentProjects } from "../../state/projects";
+import { serverEnvironment } from "../../state/server";
+import { environmentThreadDetails, environmentThreadShells } from "../../state/threads";
 import { act, fakeTimers, render, stubGlobal } from "../../../test/render";
 import { MessagesTimeline } from "./MessagesTimeline";
+import { V2LifecycleRow } from "./V2LifecycleRow";
 import { createWorkspaceFocusController, workspaceAreaProps } from "../../lib/workspaceFocus";
 import { resolveTimelineIsAtEnd } from "./MessagesTimeline.logic";
 import { makeStreamingTimelineFixture } from "../../test-fixtures";
@@ -483,6 +488,225 @@ describe("MessagesTimeline work rows", () => {
       }
     },
   );
+
+  it("resolves a remote subagent tooltip against its child environment and drops the remote driver label when disconnected", async () => {
+    const now = DateTime.makeUnsafe(CREATED_AT);
+    const parentThreadId = ThreadId.make("thread-1");
+    const remoteEnvId = EnvironmentId.make("environment-remote");
+    const offlineEnvId = EnvironmentId.make("environment-offline");
+    const remoteThreadId = ThreadId.make("remote-child");
+    const parentProjectId = ProjectId.make("project-parent");
+    const remoteProjectId = ProjectId.make("project-remote");
+    const instanceId = ProviderInstanceId.make("codex-work");
+    const provider = (
+      id: ProviderInstanceId,
+      driver: ProviderDriverKind,
+      displayName: string,
+      modelName: string,
+    ): ServerProvider => ({
+      instanceId: id,
+      driver,
+      displayName,
+      status: "ready",
+      enabled: true,
+      installed: true,
+      version: null,
+      auth: { status: "authenticated" },
+      checkedAt: CREATED_AT,
+      models: [{ slug: "gpt-5.4", name: modelName, isCustom: false, capabilities: null }],
+      slashCommands: [],
+      skills: [],
+    });
+
+    const providersByEnv = new Map<EnvironmentId, Atom.Atom<ReadonlyArray<ServerProvider>>>([
+      [
+        ENVIRONMENT_ID,
+        Atom.make([
+          provider(
+            instanceId,
+            ProviderDriverKind.make("claudeAgent"),
+            "Parent Stub",
+            "Wrong Model",
+          ),
+        ]),
+      ],
+      [
+        remoteEnvId,
+        Atom.make([
+          provider(
+            ProviderInstanceId.make("codex"),
+            ProviderDriverKind.make("codex"),
+            "Codex",
+            "GPT-5.4",
+          ),
+          provider(instanceId, ProviderDriverKind.make("codex"), "Work Codex", "GPT-5.4"),
+        ]),
+      ],
+    ]);
+    const missing = Atom.make(null);
+    using _providers = vi
+      .spyOn(serverEnvironment, "providersValueAtom")
+      .mockImplementation((envId) => (providersByEnv.get(envId) ?? missing) as never);
+
+    const shells = new Map([
+      [
+        `${ENVIRONMENT_ID}:${parentThreadId}`,
+        Atom.make({
+          source: {
+            id: parentThreadId,
+            projectId: parentProjectId,
+            title: "Parent thread",
+            branch: "main",
+            worktreePath: "/workspace/parent",
+          },
+        }),
+      ],
+      [
+        `${remoteEnvId}:${remoteThreadId}`,
+        Atom.make({
+          source: {
+            id: remoteThreadId,
+            projectId: remoteProjectId,
+            title: "Verified remote checkout",
+            branch: "feat/remote-branch",
+            worktreePath: "/workspace/remote-wt",
+          },
+        }),
+      ],
+    ]);
+    using _threadShell = vi
+      .spyOn(environmentThreadShells, "threadShellAtom")
+      .mockImplementation(
+        (ref) => (shells.get(`${ref.environmentId}:${ref.threadId}`) ?? missing) as never,
+      );
+
+    const remoteProject = Atom.make({
+      id: remoteProjectId,
+      title: "Remote Repo",
+      workspaceRoot: "/workspace/remote",
+    });
+    using _project = vi
+      .spyOn(environmentProjects, "projectAtom")
+      .mockImplementation(
+        (ref) =>
+          (ref.environmentId === remoteEnvId && ref.projectId === remoteProjectId
+            ? remoteProject
+            : missing) as never,
+      );
+
+    const makeSubagent = (
+      id: string,
+      remoteChild: { environmentId: EnvironmentId; threadId: ThreadId; label: string },
+    ): OrchestrationV2Subagent => ({
+      id: NodeId.make(id),
+      threadId: parentThreadId,
+      runId: null,
+      parentNodeId: NodeId.make("parent-root"),
+      origin: "app_owned",
+      createdBy: "agent",
+      driver: ProviderDriverKind.make("remote"),
+      providerInstanceId: instanceId,
+      providerThreadId: null,
+      childThreadId: null,
+      nativeTaskRef: null,
+      prompt: "Audit remote checkout",
+      title: "Initial prompt title",
+      model: "gpt-5.4",
+      status: "completed",
+      result: "Checked remote files",
+      startedAt: now,
+      completedAt: now,
+      updatedAt: now,
+      remoteChild,
+    });
+    using _threadAtom = vi.spyOn(environmentThreadDetails, "threadAtom").mockReturnValue(
+      Atom.make({
+        projection: {
+          subagents: [
+            makeSubagent("remote-connected", {
+              environmentId: remoteEnvId,
+              threadId: remoteThreadId,
+              label: "Remote host",
+            }),
+            makeSubagent("remote-offline", {
+              environmentId: offlineEnvId,
+              threadId: ThreadId.make("offline-child"),
+              label: "Offline host",
+            }),
+          ],
+        },
+      }) as never,
+    );
+    const makeItem = (subagentId: string, title: string) =>
+      ({
+        id: TurnItemId.make(subagentId),
+        threadId: parentThreadId,
+        runId: null,
+        nodeId: null,
+        providerThreadId: null,
+        providerTurnId: null,
+        nativeItemRef: null,
+        parentItemId: null,
+        ordinal: 0,
+        status: "completed",
+        title,
+        startedAt: now,
+        completedAt: now,
+        updatedAt: now,
+        type: "subagent",
+        subagentId: NodeId.make(subagentId),
+        origin: "app_owned",
+        driver: ProviderDriverKind.make("remote"),
+        providerInstanceId: instanceId,
+        childThreadId: null,
+        prompt: "Audit remote checkout",
+        result: "Checked remote files",
+      }) as const;
+
+    await using screen = await render(
+      <div>
+        <V2LifecycleRow
+          environmentId={ENVIRONMENT_ID}
+          item={makeItem("remote-connected", "Initial prompt title")}
+          runs={[]}
+          onOpenThread={() => {}}
+        />
+        <V2LifecycleRow
+          environmentId={ENVIRONMENT_ID}
+          item={makeItem("remote-offline", "Offline prompt title")}
+          runs={[]}
+          onOpenThread={() => {}}
+        />
+      </div>,
+    );
+
+    const openPopup = () =>
+      document.querySelector<HTMLElement>('[data-slot="tooltip-popup"]:not([data-ending-style])');
+    const rows = [
+      ...screen.container.querySelectorAll<HTMLElement>('[data-v2-item-type="subagent"]'),
+    ];
+    expect(rows).toHaveLength(2);
+    await userEvent.hover(rows[0]!);
+    await vi.waitFor(() => {
+      const text = openPopup()?.textContent ?? "";
+      expect(text).toContain("Verified remote checkout");
+      expect(text).toContain("GPT-5.4 · Work Codex");
+      expect(text).toContain("Remote Repo");
+      expect(text).toContain("feat/remote-branch");
+      expect(text).not.toContain("Wrong Model");
+    });
+
+    await userEvent.hover(rows[1]!);
+    await vi.waitFor(() => {
+      const popup = openPopup();
+      const text = popup?.textContent ?? "";
+      expect(text).toContain("Offline prompt title");
+      expect(text).not.toContain("Wrong Model");
+      const iconSlot = popup?.querySelector(".grid > div")?.firstElementChild;
+      expect(iconSlot?.matches("svg.lucide-bot")).toBe(true);
+      expect(iconSlot?.textContent).toBe("");
+    });
+  });
 
   it("keeps expanded tool output outside the row's toggle button", async () => {
     setup();

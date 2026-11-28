@@ -578,6 +578,7 @@ function SubagentTimelineLink(props: {
       <ThreadHoverCardPopup>
         <SubagentTimelineTooltip
           {...props}
+          remote={remote}
           elapsed={agent ? <AgentElapsed agent={projectedSubagentsToRuntime([agent])[0]!} /> : null}
           model={agent?.model ?? null}
           modelSelection={agent?.modelSelection}
@@ -600,15 +601,22 @@ function SubagentTimelineTooltip(
   const environmentId = props.parentRef.environmentId;
   // Read providers only in the open popup to avoid per-row subscriptions.
   const providers =
-    useAtomValue(serverEnvironment.providersValueAtom(environmentId)) ?? EMPTY_SERVER_PROVIDERS;
+    useAtomValue(
+      serverEnvironment.providersValueAtom(props.remote?.environmentId ?? environmentId),
+    ) ?? EMPTY_SERVER_PROVIDERS;
   const parent = useThreadShell(props.parentRef)?.source;
-  const child = useThreadShell(
-    props.threadId ? scopeThreadRef(environmentId, props.threadId) : null,
-  )?.source;
+  const childRef = props.threadId
+    ? scopeThreadRef(environmentId, props.threadId)
+    : props.remote
+      ? scopeThreadRef(props.remote.environmentId, props.remote.threadId)
+      : null;
+  const child = useThreadShell(childRef)?.source;
   const parentProject = useProject(
     parent ? scopeProjectRef(environmentId, parent.projectId) : null,
   );
-  const childProject = useProject(child ? scopeProjectRef(environmentId, child.projectId) : null);
+  const childProject = useProject(
+    child && childRef ? scopeProjectRef(childRef.environmentId, child.projectId) : null,
+  );
   return (
     <SubagentTooltipContent
       title={formatSubagentDisplayTitle(child?.title ?? props.title)}
@@ -618,7 +626,7 @@ function SubagentTimelineTooltip(
       modelSelection={props.modelSelection}
       provider={providers.find((provider) => provider.instanceId === props.providerInstanceId)}
       providers={providers}
-      driver={props.driver}
+      driver={props.remote === undefined ? props.driver : undefined}
       elapsed={props.elapsed}
       status={props.status}
       result={props.result}
