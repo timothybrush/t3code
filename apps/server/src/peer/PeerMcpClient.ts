@@ -191,9 +191,7 @@ const make = Effect.gen(function* () {
 
   const call: PeerMcpClient["Service"]["call"] = Effect.fn("PeerMcpClient.call")(
     function* (input) {
-      const resolved = yield* links
-        .resolve(input.environmentId)
-        .pipe(Effect.mapError(fromLinkError));
+      const resolved = yield* links.resolve(input.environmentId);
       const limitHeader = {
         [McpInvocationContext.MODE_LIMIT_HEADER]: `${input.limits.runtimeMode}/${input.limits.interactionMode}`,
       };
@@ -310,12 +308,19 @@ const make = Effect.gen(function* () {
     (effect, input) =>
       effect.pipe(
         Effect.tapError((error) =>
-          links.recordOutcome(input.environmentId, { error: error.message }),
+          // Listing checks again whether the peer answers, so a stored
+          // "did not answer" would only outlast the peer waking up.
+          error._tag === "HttpClientError" ||
+          error._tag === "TimeoutError" ||
+          (error._tag === "PeerLinkError" && error.reason === "unreachable")
+            ? Effect.void
+            : links.recordOutcome(input.environmentId, { error: error.message }),
         ),
         // A refusal is still an answer: the link works, so only this call fails.
         Effect.tap(() => links.recordOutcome(input.environmentId, { error: null })),
-        // Recorded above with the transport's own message; the agent hears it plainly.
+        // The agent hears a lost transport plainly.
         Effect.catchTags({
+          PeerLinkError: (error) => Effect.fail(fromLinkError(error)),
           HttpClientError: () => Effect.fail(stoppedAnswering),
           TimeoutError: () => Effect.fail(stoppedAnswering),
         }),

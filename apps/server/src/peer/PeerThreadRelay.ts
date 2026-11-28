@@ -184,10 +184,8 @@ const make = Effect.gen(function* () {
       .pipe(
         // Bounds the headers only: an open stream stays quiet for as long as the thread does.
         Effect.timeout(timeout),
+        // Not recorded: listing checks again whether the peer answers.
         Effect.mapError((error) => unreachable(label, error)),
-        Effect.tapError((error) =>
-          links.recordOutcome(input.environmentId, { error: error.message }),
-        ),
       );
     if (response.status !== 200) {
       // A refusal whose body never arrives is still the refusal its status names.

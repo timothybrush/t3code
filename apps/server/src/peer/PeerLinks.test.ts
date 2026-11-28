@@ -406,6 +406,28 @@ it.effect("never sends a link's token to an address that stops answering as that
   ).pipe(Effect.provide(NodeHttpServer.layerTest)),
 );
 
+it.effect("a peer that answers the listing again no longer lists the call that missed it", () =>
+  Effect.scoped(
+    Effect.gen(function* () {
+      const b = yield* serveB(box);
+      const a = yield* makeA(laptop);
+      const pairing = yield* b.auth.issuePairingCredential();
+      yield* a.links.link({ url: b.url, pairingCode: pairing.credential, access: "auto" });
+      yield* probe(a);
+
+      // One linked call while the peer is away, as a laptop asleep with its lid closed.
+      yield* Ref.set(b.descriptor, descriptorOf("environment-impostor", "Impostor"));
+      const missed = yield* probe(a).pipe(Effect.flip);
+      expect(missed.message).toContain("Box did not answer");
+
+      yield* Ref.set(b.descriptor, box);
+      const [listed] = yield* a.links.list;
+      expect(listed?.status).toBe("reachable");
+      expect(listed?.lastError).toBeNull();
+    }),
+  ).pipe(Effect.provide(NodeHttpServer.layerTest)),
+);
+
 it.effect("lists a peer asleep at every address as unreachable within one probe budget", () =>
   Effect.scoped(
     Effect.gen(function* () {
