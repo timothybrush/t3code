@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { Atom } from "effect/reactivity";
 import {
   ATTACHMENT_ONLY_BOOTSTRAP_PROMPT,
+  formatComposerContextReference,
   restoreAttachmentOnlyBootstrapPrompt,
 } from "@t3tools/shared/composerContextReferences";
 import {
@@ -246,6 +247,31 @@ describe("beginQueuedRunEdit", () => {
     expect(appAtomRegistry.get(threadComposerErrorsAtom)[threadKey]?.message).toBe(
       "That message already started, so the edit was discarded.",
     );
+  });
+
+  it("removes a server attachment's chip from the edit text along with its thumbnail", () => {
+    const threadKey = "env-exit:thread-removed-chip";
+    const runId = RunId.make("run-1");
+    const runs = Atom.make<ReadonlyArray<{ readonly id: RunId; readonly status: string }> | null>([
+      { id: runId, status: "queued" },
+    ]);
+    const withChips = context(["kept", "gone"]);
+    const [keptRecord, goneRecord] = withChips.records;
+    const originalText = `look ${formatComposerContextReference(keptRecord!)} and ${formatComposerContextReference(goneRecord!)}`;
+    beginQueuedRunEdit(
+      threadKey,
+      { ...edit([image("kept"), image("gone")]), originalText, context: withChips },
+      runs,
+    );
+
+    removeQueuedRunEditAttachment(threadKey, "gone");
+
+    const draft = getComposerDraftSnapshot(queuedEditDraftKey(threadKey, runId));
+    expect(draft.text).toContain(formatComposerContextReference(keptRecord!));
+    expect(draft.text).not.toContain(formatComposerContextReference(goneRecord!));
+    expect(draft.context?.records.map((record) => record.contextId)).toEqual([
+      keptRecord!.contextId,
+    ]);
   });
 
   it("treats a removed server attachment as a change when the run starts", () => {

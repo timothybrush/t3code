@@ -26,6 +26,7 @@ import {
   clearComposerDraft,
   getComposerDraftSnapshot,
   mergeComposerDraftContent,
+  removeComposerDraftAttachment,
   setComposerDraftContext,
   setComposerDraftText,
   updateComposerDraftSettings,
@@ -149,6 +150,10 @@ export function beginQueuedRunEdit(
 }
 
 export function removeQueuedRunEditAttachment(threadKey: string, attachmentId: string): void {
+  const edit = getQueuedRunEdit(threadKey);
+  if (edit === null) return;
+  // Its chip goes too, or the saved message keeps a reference to an attachment it no longer has.
+  removeComposerDraftAttachment(queuedEditDraftKey(threadKey, edit.runId), attachmentId);
   queuedRunEdits.update(threadKey, (edit) => ({
     ...edit,
     removedExistingAttachment: true,
