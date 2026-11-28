@@ -21,6 +21,13 @@ describe("stashEntrySnippet", () => {
     expect(stashEntrySnippet(entry(`${"a".repeat(89)} word`))).toBe(`${"a".repeat(89)}…`);
   });
 
+  it("does not cut a combining mark off its letter", () => {
+    expect(stashEntrySnippet(entry(`${"a".repeat(89)}कि and more`))).toBe(`${"a".repeat(89)}…`);
+    expect(stashEntrySnippet(entry(`${"a".repeat(89)}e\u0301 and more`))).toBe(
+      `${"a".repeat(89)}…`,
+    );
+  });
+
   it("shows context chips by their label", () => {
     const file = formatComposerContextReference({
       kind: "file",

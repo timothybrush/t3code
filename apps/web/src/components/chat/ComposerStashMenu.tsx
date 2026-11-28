@@ -27,9 +27,12 @@ export function stashEntrySnippet(entry: PromptStashEntry, resolve: MessageResol
     .replace(/\s+/g, " ");
   if (trimmed.length > 0) {
     if (trimmed.length <= SNIPPET_MAX_CHARS) return trimmed;
+    // Never cut a combining mark off its letter.
+    let end = SNIPPET_MAX_CHARS;
+    while (end > 0 && /\p{M}/u.test(trimmed.charAt(end))) end -= 1;
     // Never end on a lone high surrogate, the first half of an emoji.
-    const last = trimmed.charCodeAt(SNIPPET_MAX_CHARS - 1);
-    const end = last >= 0xd800 && last <= 0xdbff ? SNIPPET_MAX_CHARS - 1 : SNIPPET_MAX_CHARS;
+    const last = trimmed.charCodeAt(end - 1);
+    if (last >= 0xd800 && last <= 0xdbff) end -= 1;
     return `${trimmed.slice(0, end).trimEnd()}…`;
   }
   const imageCount =
