@@ -4706,6 +4706,8 @@
   "ae0ea7eeafa9d787": "Stopped",
   "f605c2d286bf62e8": "Updated",
   "b82e7048f8e39cdb": "Run interrupted",
+  "07e44eb170a90112": "Stopped by user",
+  "5ddcf0d3bb87225f": "Stopped by the provider",
   "761afeb881bd5ac8": "Forked from conversation",
   "a02a5c40dfd8c806": "Conversation fork",
   "717498f2abb43bfe": "Open source conversation",

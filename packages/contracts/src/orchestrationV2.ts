@@ -623,6 +623,13 @@ export function isProviderNativeSubagentThread(
 
 export const IDLE_COMPACTION_TEXT = "/compact";
 
+/**
+ * Clients send Stop without a reason; server callers acting for an agent always set one, so a
+ * missing reason means a person stopped the run. Clients show these defaults translated.
+ */
+export const RUN_STOPPED_BY_USER_REASON = "Stopped by user";
+export const RUN_STOPPED_BY_PROVIDER_REASON = "Stopped by the provider";
+
 interface CompactionMessageFields {
   readonly role: string;
   readonly text: string;

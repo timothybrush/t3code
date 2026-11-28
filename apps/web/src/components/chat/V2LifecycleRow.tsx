@@ -1,4 +1,5 @@
 import { T, Var, msg, useGT, useMessages } from "gt-react";
+import { runStopReasonLabel } from "@t3tools/client-runtime/contract-labels";
 import { ThreadHoverCardPopup } from "../ThreadHoverCard";
 import { AgentElapsed } from "./AgentElapsed";
 import { projectedSubagentsToRuntime } from "@t3tools/client-runtime/state/subagentRuntime";
@@ -86,11 +87,12 @@ export function V2LifecycleRow(props: {
 }) {
   const { item } = props;
   const gt = useGT();
+  const m = useMessages();
   if (item.type === "run_interrupt_result") {
     return (
       <TimelineSystemDivider
         label={gt("Run interrupted")}
-        detail={item.message}
+        detail={runStopReasonLabel(item.message, m)}
         icon={CircleStopIcon}
         wrapDetail
       />

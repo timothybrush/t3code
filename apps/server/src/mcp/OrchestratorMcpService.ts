@@ -282,7 +282,7 @@ export function threadManagementFailure(error: unknown): OrchestratorMcpFailure 
   }
 }
 
-// Without a reason, a Stop reads as the user's (see RunExecutionService.USER_STOP_REASON).
+// Without a reason, a Stop reads as the user's (see RUN_STOPPED_BY_USER_REASON).
 function agentStopReason(reason: string | undefined): string {
   return reason === undefined ? "Stopped by an agent" : `Stopped by an agent: ${reason}`;
 }

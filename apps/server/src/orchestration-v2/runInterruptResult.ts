@@ -1,8 +1,9 @@
-import type {
-  OrchestrationV2ExecutionNode,
-  OrchestrationV2ProviderThread,
-  OrchestrationV2Run,
-  OrchestrationV2TurnItem,
+import {
+  type OrchestrationV2ExecutionNode,
+  type OrchestrationV2ProviderThread,
+  type OrchestrationV2Run,
+  type OrchestrationV2TurnItem,
+  RUN_STOPPED_BY_PROVIDER_REASON,
 } from "@t3tools/contracts";
 import type * as DateTime from "effect/DateTime";
 import type * as IdAllocator from "@t3tools/provider-core/server/IdAllocator";
@@ -37,6 +38,6 @@ export function makeInterruptResultTurnItem(input: {
     completedAt: input.completedAt,
     updatedAt: input.completedAt,
     type: "run_interrupt_result",
-    message: input.reason ?? "Stopped by the provider",
+    message: input.reason ?? RUN_STOPPED_BY_PROVIDER_REASON,
   };
 }

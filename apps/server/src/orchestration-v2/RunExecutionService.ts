@@ -2433,9 +2433,3 @@ export const layer: Layer.Layer<
     } satisfies RunExecutionServiceV2Shape);
   }),
 );
-
-/**
- * Clients send Stop without a reason; server callers acting for an agent
- * always set one, so a missing reason means a person stopped the run.
- */
-export const USER_STOP_REASON = "Stopped by user";

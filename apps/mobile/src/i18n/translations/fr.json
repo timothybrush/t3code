@@ -1574,6 +1574,8 @@
   "4c611c2ef24c2fb7": "Point de contrôle enregistré",
   "db0cf0eab27e7a13": "Interruption demandée",
   "b82e7048f8e39cdb": "Exécution interrompue",
+  "07e44eb170a90112": "Arrêté par l'utilisateur",
+  "5ddcf0d3bb87225f": "Arrêté par le fournisseur",
   "d407926eb12273d6": "Limite d’utilisation atteinte",
   "81d48ad533f04c08": "Erreur du fournisseur",
   "7bd3925ac9b612f5": "Contexte transféré",

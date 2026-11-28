@@ -1574,6 +1574,8 @@
   "4c611c2ef24c2fb7": "Punto de control capturado",
   "db0cf0eab27e7a13": "Interrupción solicitada",
   "b82e7048f8e39cdb": "Ejecución interrumpida",
+  "07e44eb170a90112": "Detenido por el usuario",
+  "5ddcf0d3bb87225f": "Detenido por el proveedor",
   "d407926eb12273d6": "Límite de uso alcanzado",
   "81d48ad533f04c08": "Error del proveedor",
   "7bd3925ac9b612f5": "Contexto traspasado",

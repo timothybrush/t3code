@@ -84,6 +84,7 @@ import {
 } from "@t3tools/shared/toolOutput";
 import * as DateTime from "effect/DateTime";
 import { msg } from "gt-react-native";
+import { runStopReasonLabel } from "@t3tools/client-runtime/contract-labels";
 import { m, type MessageResolver } from "../i18n/messages";
 import {
   IDLE_COMPACTION_TITLES,
@@ -765,6 +766,7 @@ function itemPreview(item: OrchestrationV2TurnItem, resolve: MessageResolver): s
           );
     case "run_interrupt_request":
     case "run_interrupt_result":
+      return item.message ? runStopReasonLabel(item.message, resolve) : null;
     case "system_notice":
       return item.message || null;
     case "error":

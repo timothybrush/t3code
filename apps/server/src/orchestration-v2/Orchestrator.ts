@@ -79,6 +79,7 @@ import {
   type ProviderThreadId,
   type ProviderDriverKind,
   RunId,
+  RUN_STOPPED_BY_USER_REASON,
   RuntimeMode,
   ThreadLinkedPullRequest,
   ThreadId,
@@ -13716,7 +13717,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
         completedAt: now,
         updatedAt: now,
         type: "run_interrupt_request",
-        message: command.reason ?? RunExecutionService.USER_STOP_REASON,
+        message: command.reason ?? RUN_STOPPED_BY_USER_REASON,
       },
     });
   });
@@ -14299,7 +14300,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
       completedAt: now,
       updatedAt: now,
       type: "run_interrupt_request",
-      message: command.reason ?? RunExecutionService.USER_STOP_REASON,
+      message: command.reason ?? RUN_STOPPED_BY_USER_REASON,
     };
 
     const otherProviderInterrupts: Array<PendingOrchestrationEffectV2> = [];

@@ -11,6 +11,8 @@ import {
   type ProjectCloneSnapshot,
   type ProjectCloneStage,
   type ProviderRuntimeModeLimit,
+  RUN_STOPPED_BY_PROVIDER_REASON,
+  RUN_STOPPED_BY_USER_REASON,
   type RuntimeMode,
   type WorktreeSetupStageId,
   worktreeSetupStageLabel as contractsWorktreeSetupStageLabel,
@@ -35,6 +37,17 @@ export function worktreeSetupStageLabel(
 ): string {
   const english = contractsWorktreeSetupStageLabel(id);
   return resolve(WORKTREE_SETUP_STAGE_LABELS[english] ?? english);
+}
+
+// Other stop reasons are an agent's own words and show as written.
+const RUN_STOP_REASON_LABELS: Readonly<Record<string, string>> = {
+  [RUN_STOPPED_BY_USER_REASON]: msg("Stopped by user"),
+  [RUN_STOPPED_BY_PROVIDER_REASON]: msg("Stopped by the provider"),
+};
+
+export function runStopReasonLabel(reason: string, resolve: MFunctionType = mFallback): string {
+  const label = RUN_STOP_REASON_LABELS[reason];
+  return label === undefined ? reason : resolve(label);
 }
 
 const PROJECT_CLONE_STAGE_LABELS: Record<ProjectCloneStage, string> = {

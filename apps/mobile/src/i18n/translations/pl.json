@@ -1574,6 +1574,8 @@
   "4c611c2ef24c2fb7": "Przechwycono checkpoint",
   "db0cf0eab27e7a13": "Zażądano przerwania",
   "b82e7048f8e39cdb": "Uruchomienie przerwane",
+  "07e44eb170a90112": "Zatrzymane przez użytkownika",
+  "5ddcf0d3bb87225f": "Zatrzymane przez dostawcę",
   "d407926eb12273d6": "Osiągnięto limit użycia",
   "81d48ad533f04c08": "Błąd dostawcy",
   "7bd3925ac9b612f5": "Kontekst przekazany",
